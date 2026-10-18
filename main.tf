@@ -55,7 +55,6 @@ resource "terraform_data" "helmfile_config" {
       with lockfile.open("a+") as lock:
           fcntl.flock(lock, fcntl.LOCK_EX)
 
-          # Optional client-wide defaults.
           common.parent.mkdir(parents=True, exist_ok=True)
           if not common.exists():
               common.write_text("{}\n")
@@ -73,7 +72,6 @@ resource "terraform_data" "helmfile_config" {
           else:
               current = helmfile.read_text()
 
-              # Each application uses one central Git reference.
               if f"  - path: {remote_path}" not in current:
                   raise SystemExit(
                       "Existing Helmfile uses another Git URL/ref. "
@@ -89,7 +87,6 @@ resource "terraform_data" "helmfile_config" {
                       "Unexpected Helmfile structure; refusing to edit."
                   )
 
-              # Don't duplicate existing environments.
               exists = re.search(
                   rf"(?m)^  {re.escape(env)}:\s*$",
                   header
@@ -107,7 +104,6 @@ resource "terraform_data" "helmfile_config" {
                   + body
               )
 
-          # Atomic replacement, under the shared lock.
           with tempfile.NamedTemporaryFile(
               mode="w",
               dir=app_dir,
