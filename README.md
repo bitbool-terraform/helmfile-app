@@ -3,30 +3,22 @@
 Sample module ref:
 
 ```terraform
-module "helmfile-superset" {
-  source = "./modules/helmfile-app"
+module "helmfile-app" {
+  for_each = { for k,v in local.helmfile_apps: k=>v if ( (lookup(v,"enabled",true) != false)) }
+  source = source = "git::https://github.com/bitbool-terraform/helmfile-app.git?ref=<VERSION_REF>"
 
-  name      = "superset"
+  name      = format("%s-%s",local.name_prefix, each.key)
   systemenv = var.systemenv
 
-  helmfile_repo = "my-org/helmfile-superset"
-  helmfile_ref  = "v1.4.0"
+  helmfile_repo = each.value.repo
+  helmfile_ref  = each.value.repo_ref
 
   # Generate beside the terraform directory
   # output_dir = "${path.root}/../helm"
 
-  env_vars = {
-    superset = {
-      namespace      = "${var.systemenv}-superset"
-      workerReplicas = 2
+  env_vars = each.value.env_vars
 
-      image = {
-        tag = "custom-1.0"
-      }
-    }
-  }
-
-  helmfile_apply  = false
-  kubeconfig_path = "~/.kube/....yaml"
+  helmfile_apply  = var.helmfile_apply
+  kubeconfig_path = var.kubeconfig_path
 }
 ```
